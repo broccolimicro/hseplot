@@ -5,20 +5,25 @@
  *      Author: nbingham
  */
 
+#include <common/standard.h>
 #include <parse/parse.h>
-#include <parse_hse/parallel.h>
+#include <parse/default/block_comment.h>
+#include <parse/default/line_comment.h>
+#include <parse_chp/composition.h>
 #include <hse/graph.h>
+#include <hse/simulator.h>
+#include <hse/elaborator.h>
 #include <interpret_hse/import.h>
-#include <interpret_dot/export.h>
-#include <boolean/variable.h>
+#include <interpret_hse/export.h>
+#include <interpret_boolean/export.h>
+#include <interpret_boolean/import.h>
+#include <ucs/variable.h>
 
-#ifndef NOGRAPHVIZ
 namespace graphviz
 {
 	#include <graphviz/cgraph.h>
 	#include <graphviz/gvc.h>
 }
-#endif
 
 void print_help()
 {
@@ -44,87 +49,118 @@ void print_version()
 
 int main(int argc, char **argv)
 {
-	bool synchronize = false;
-	string filename = "";
-
 	configuration config;
 	config.set_working_directory(argv[0]);
-	tokenizer tokens;
-	parse_hse::parallel::register_syntax(tokens);
+	tokenizer hse_tokens;
+	tokenizer astg_tokens;
+	parse_chp::composition::register_syntax(hse_tokens);
+	parse_astg::graph::register_syntax(astg_tokens);
+	hse_tokens.register_token<parse::block_comment>(false);
+	hse_tokens.register_token<parse::line_comment>(false);
+	string ofilename = "a.png";
+	string oformat = "png";
 
 	for (int i = 1; i < argc; i++)
 	{
 		string arg = argv[i];
 		if (arg == "--help" || arg == "-h")			// Help
+		{
 			print_help();
+			return 0;
+		}
 		else if (arg == "--version")	// Version Information
+		{
 			print_version();
+			return 0;
+		}
 		else if (arg == "--verbose" || arg == "-v")
 			set_verbose(true);
 		else if (arg == "--debug" || arg == "-d")
 			set_debug(true);
-		else if (arg == "--sync" || arg == "-s")
-			synchronize = true;
 		else if (arg == "-o")
 		{
 			i++;
 			if (i < argc)
-				filename = argv[i];
+			{
+				ofilename = argv[i];
+
+				size_t loc = ofilename.find_last_of(".");
+				if (loc != ofilename.npos)
+					oformat = ofilename.substr(loc+1);
+			}
 			else
-				error("", "expected file name", __FILE__, __LINE__);
+			{
+				error("", "expected output filename", __FILE__, __LINE__);
+				return 1;
+			}
 		}
-		else
-			config.load(tokens, argv[i], "");
-	}
-
-	string format;
-	if (filename == "")
-		error("", "file name not specified", __FILE__, __LINE__);
-	else
-	{
-		size_t loc = filename.find_last_of(".");
-		if (loc == filename.npos)
-			error("", "file format could not be determined from the file name", __FILE__, __LINE__);
-		else
-			format = filename.substr(loc+1);
-	}
-
-	if (is_clean() && tokens.segments.size() > 0)
-	{
-		parse_hse::parallel syntax(tokens);
-
-		boolean::variable_set v;
-		hse::graph g = import_graph(tokens, syntax, v, true);
-		g.compact();
-
-		if (synchronize)
-			g.synchronize();
-
-		string dot = export_graph(g, v).to_string();
-
-		if (format == "dot")
-		{
-			ofstream s(filename.c_str());
-			s << dot;
-			s.close();
-		}
-
-#ifndef NOGRAPHVIZ
 		else
 		{
-			graphviz::Agraph_t* G = graphviz::agmemread(dot.c_str());
-			graphviz::GVC_t* gvc = graphviz::gvContext();
-			graphviz::gvLayout(gvc, G, "dot");
-			graphviz::gvRenderFilename(gvc, G, format.c_str(), filename.c_str());
-			graphviz::gvFreeLayout(gvc, G);
-			graphviz::agclose(G);
-			graphviz::gvFreeContext(gvc);
+			string filename = argv[i];
+			int dot = filename.find_last_of(".");
+			string format = "";
+			if (dot != string::npos)
+				format = filename.substr(dot+1);
+			if (format == "hse")
+				config.load(hse_tokens, filename, "");
+			else if (format == "astg")
+				config.load(astg_tokens, filename, "");
+			else
+				printf("unrecognized file format '%s'\n", format.c_str());
 		}
-#else
-		else
-			error("", "file format '" + format + "' not supported", __FILE__, __LINE__);
-#endif
+	}
 
+	if (is_clean() && hse_tokens.segments.size() + astg_tokens.segments.size() > 0)
+	{
+		hse::graph g;
+		ucs::variable_set v;
+
+		hse_tokens.increment(false);
+		hse_tokens.expect<parse_chp::composition>();
+		while (hse_tokens.decrement(__FILE__, __LINE__))
+		{
+			parse_chp::composition syntax(hse_tokens);
+			g.merge(hse::parallel, import_graph(syntax, v, 0, &hse_tokens, true));
+
+			hse_tokens.increment(false);
+			hse_tokens.expect<parse_chp::composition>();
+		}
+
+		astg_tokens.increment(false);
+		astg_tokens.expect<parse_astg::graph>();
+		while (astg_tokens.decrement(__FILE__, __LINE__))
+		{
+			parse_astg::graph syntax(astg_tokens);
+			g.merge(hse::parallel, import_graph(syntax, v, &astg_tokens));
+
+			astg_tokens.increment(false);
+			astg_tokens.expect<parse_astg::graph>();
+		}
+		g.post_process(v, true);
+		g.check_variables(v);
+
+		if (is_clean())
+		{
+
+			string dot = export_graph(g, v).to_string();
+
+			if (oformat == "dot")
+			{
+				FILE *file = fopen(ofilename.c_str(), "w");
+				fprintf(file, "%s\n", dot.c_str());
+				fclose(file);
+			}
+			else
+			{
+				graphviz::Agraph_t* G = graphviz::agmemread(dot.c_str());
+				graphviz::GVC_t* gvc = graphviz::gvContext();
+				graphviz::gvLayout(gvc, G, "dot");
+				graphviz::gvRenderFilename(gvc, G, oformat.c_str(), ofilename.c_str());
+				graphviz::gvFreeLayout(gvc, G);
+				graphviz::agclose(G);
+				graphviz::gvFreeContext(gvc);
+			}
+		}
 	}
 
 	complete();
