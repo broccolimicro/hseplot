@@ -19,11 +19,13 @@
 #include <interpret_boolean/import.h>
 #include <ucs/variable.h>
 
+#ifdef GRAPHVIZ_SUPPORTED
 namespace graphviz
 {
 	#include <graphviz/cgraph.h>
 	#include <graphviz/gvc.h>
 }
+#endif
 
 void print_help()
 {
@@ -152,6 +154,7 @@ int main(int argc, char **argv)
 			}
 			else
 			{
+#ifdef GRAPHVIZ_SUPPORTED
 				graphviz::Agraph_t* G = graphviz::agmemread(dot.c_str());
 				graphviz::GVC_t* gvc = graphviz::gvContext();
 				graphviz::gvLayout(gvc, G, "dot");
@@ -159,6 +162,9 @@ int main(int argc, char **argv)
 				graphviz::gvFreeLayout(gvc, G);
 				graphviz::agclose(G);
 				graphviz::gvFreeContext(gvc);
+#else
+				error("", "Graphviz DOT not supported", __FILE__, __LINE__);
+#endif
 			}
 		}
 	}
