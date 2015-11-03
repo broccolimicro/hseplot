@@ -62,6 +62,8 @@ int main(int argc, char **argv)
 	string ofilename = "a.png";
 	string oformat = "png";
 
+	bool labels = false;
+
 	for (int i = 1; i < argc; i++)
 	{
 		string arg = argv[i];
@@ -79,6 +81,8 @@ int main(int argc, char **argv)
 			set_verbose(true);
 		else if (arg == "--debug" || arg == "-d")
 			set_debug(true);
+		else if (arg == "--labels" || arg == "-l")
+			labels = true;
 		else if (arg == "-o")
 		{
 			i++;
@@ -139,12 +143,11 @@ int main(int argc, char **argv)
 			astg_tokens.expect<parse_astg::graph>();
 		}
 		g.post_process(v, true);
-		g.check_variables(v);
+		//g.check_variables(v);
 
 		if (is_clean())
 		{
-
-			string dot = export_graph(g, v).to_string();
+			string dot = export_graph(g, v, labels).to_string();
 
 			if (oformat == "dot")
 			{
