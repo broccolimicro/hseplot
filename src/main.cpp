@@ -166,7 +166,21 @@ int main(int argc, char **argv)
 				graphviz::agclose(G);
 				graphviz::gvFreeContext(gvc);
 #else
-				error("", "Graphviz DOT not supported", __FILE__, __LINE__);
+				
+				string tfilename = ofilename.substr(0, ofilename.find_last_of("."));
+				FILE *temp = NULL;
+				int num = 0;
+				for (; temp == NULL; num++)
+					temp = fopen((tfilename + to_string(num) + ".dot").c_str(), "wx");
+				tfilename += to_string(--num) + ".dot";
+
+				fprintf(temp, "%s\n", dot.c_str());
+				fclose(temp);
+
+				if (system(("dot -T" + oformat + " " + tfilename + " > " + ofilename).c_str()) != 0)
+					error("", "Graphviz DOT not supported", __FILE__, __LINE__);
+				else if (system(("rm -f " + tfilename).c_str()) != 0)
+					warning("", "Temporary files not cleaned up", __FILE__, __LINE__);
 #endif
 			}
 		}
