@@ -171,8 +171,9 @@ int main(int argc, char **argv)
 				FILE *temp = NULL;
 				int num = 0;
 				for (; temp == NULL; num++)
-					temp = fopen((tfilename + to_string(num) + ".dot").c_str(), "wx");
-				tfilename += to_string(--num) + ".dot";
+					temp = fopen((tfilename + (num > 0 ? to_string(num) : "") + ".dot").c_str(), "wx");
+				num--;
+				tfilename += (num > 0 ? to_string(num) : "") + ".dot";
 
 				fprintf(temp, "%s\n", dot.c_str());
 				fclose(temp);
