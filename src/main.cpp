@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 			astg_tokens.expect<parse_astg::graph>();
 		}
 		g.post_process(v, true);
-		//g.check_variables(v);
+		g.check_variables(v);
 
 		if (is_clean())
 		{
