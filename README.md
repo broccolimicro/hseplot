@@ -19,6 +19,8 @@ The input file should be labeled with the appropriate type:
 
 ## License
 
+This project is part of the Haystack synthesis engine.
+
 Licensed by Cornell University under GNU GPL v3.
 
 Written by Ned Bingham.
