@@ -38,6 +38,9 @@ void print_help()
 	cout << endl;
 	cout << " -o             Specify the output file name" << endl;
 	cout << "    formats other than 'dot' are passed onto graphviz dot for rendering" << endl;
+	cout << " -l,--labels    Show the IDs for each place, transition, and arc" << endl;
+	cout << " -e,--effective Show the effective encoding of each place" << endl;
+	cout << " -p,--predicate Show the predicate of each place" << endl;
 	cout << " -s,--sync\t\tRender half synchronization actions" << endl;
 }
 
@@ -61,6 +64,7 @@ int main(int argc, char **argv)
 	hse_tokens.register_token<parse::line_comment>(false);
 	string ofilename = "a.png";
 	string oformat = "png";
+	int encodings = -1;
 
 	bool labels = false;
 
@@ -83,6 +87,10 @@ int main(int argc, char **argv)
 			set_debug(true);
 		else if (arg == "--labels" || arg == "-l")
 			labels = true;
+		else if (arg == "--effective" || arg == "-e")
+			encodings = 1;
+		else if (arg == "--predicate" || arg == "-p")
+			encodings = 0;
 		else if (arg == "-o")
 		{
 			i++;
@@ -147,7 +155,7 @@ int main(int argc, char **argv)
 
 		if (is_clean())
 		{
-			string dot = export_graph(g, v, labels).to_string();
+			string dot = export_graph(g, v, labels, encodings).to_string();
 
 			if (oformat == "dot")
 			{
