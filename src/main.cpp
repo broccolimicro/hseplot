@@ -31,16 +31,17 @@ void print_help()
 {
 	cout << "Usage: plot [options] file..." << endl;
 	cout << "Options:" << endl;
-	cout << " -h,--help      Display this information" << endl;
-	cout << "    --version   Display version information" << endl;
-	cout << " -v,--verbose   Display verbose messages" << endl;
-	cout << " -d,--debug     Display internal debugging messages" << endl;
+	cout << " -h,--help       Display this information" << endl;
+	cout << "    --version    Display version information" << endl;
+	cout << " -v,--verbose    Display verbose messages" << endl;
+	cout << " -d,--debug      Display internal debugging messages" << endl;
 	cout << endl;
-	cout << " -o             Specify the output file name" << endl;
+	cout << " -o              Specify the output file name" << endl;
 	cout << "    formats other than 'dot' are passed onto graphviz dot for rendering" << endl;
-	cout << " -l,--labels    Show the IDs for each place, transition, and arc" << endl;
-	cout << " -e,--effective Show the effective encoding of each place" << endl;
-	cout << " -p,--predicate Show the predicate of each place" << endl;
+	cout << " -l,--labels     Show the IDs for each place, transition, and arc" << endl;
+	cout << " -lr,--leftright Render the graph from left to right" << endl;
+	cout << " -e,--effective  Show the effective encoding of each place" << endl;
+	cout << " -p,--predicate  Show the predicate of each place" << endl;
 	cout << " -s,--sync\t\tRender half synchronization actions" << endl;
 }
 
@@ -67,6 +68,7 @@ int main(int argc, char **argv)
 	int encodings = -1;
 
 	bool labels = false;
+	bool horiz = false;
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -87,6 +89,8 @@ int main(int argc, char **argv)
 			set_debug(true);
 		else if (arg == "--labels" || arg == "-l")
 			labels = true;
+		else if (arg == "--leftright" || arg == "-lr")
+			horiz = true;
 		else if (arg == "--effective" || arg == "-e")
 			encodings = 1;
 		else if (arg == "--predicate" || arg == "-p")
@@ -155,7 +159,7 @@ int main(int argc, char **argv)
 
 		if (is_clean())
 		{
-			string dot = export_graph(g, v, labels, encodings).to_string();
+			string dot = export_graph(g, v, horiz, labels, encodings).to_string();
 
 			if (oformat == "dot")
 			{
