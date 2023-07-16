@@ -67,6 +67,9 @@ int main(int argc, char **argv)
 	string oformat = "png";
 	int encodings = -1;
 
+	bool proper = true;
+	bool aggressive = false;
+	bool process = true;
 	bool labels = false;
 	bool horiz = false;
 
@@ -95,6 +98,12 @@ int main(int argc, char **argv)
 			encodings = 1;
 		else if (arg == "--predicate" || arg == "-p")
 			encodings = 0;
+		else if (arg == "--raw" || arg == "-r")
+			process = false;
+		else if (arg == "--nest" || arg == "-n")
+			proper = false;
+		else if (arg == "--aggressive" || arg == "-ag")
+			aggressive = true;
 		else if (arg == "-o")
 		{
 			i++;
@@ -154,7 +163,8 @@ int main(int argc, char **argv)
 			astg_tokens.increment(false);
 			astg_tokens.expect<parse_astg::graph>();
 		}
-		g.post_process(v, true);
+		if (process)
+			g.post_process(v, proper, aggressive);
 		g.check_variables(v);
 
 		if (is_clean())
