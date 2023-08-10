@@ -71,6 +71,7 @@ int main(int argc, char **argv)
 	bool aggressive = false;
 	bool process = true;
 	bool labels = false;
+	bool notations = false;
 	bool horiz = false;
 
 	for (int i = 1; i < argc; i++)
@@ -92,6 +93,8 @@ int main(int argc, char **argv)
 			set_debug(true);
 		else if (arg == "--labels" || arg == "-l")
 			labels = true;
+		else if (arg == "--notations" || arg == "-nt")
+			notations = true;
 		else if (arg == "--leftright" || arg == "-lr")
 			horiz = true;
 		else if (arg == "--effective" || arg == "-e")
@@ -163,13 +166,18 @@ int main(int argc, char **argv)
 			astg_tokens.increment(false);
 			astg_tokens.expect<parse_astg::graph>();
 		}
-		if (process)
+		if (process) {
 			g.post_process(v, proper, aggressive);
+		}
+		if (notations) {
+			g.compute_parallel_nodes();
+		}
+
 		g.check_variables(v);
 
 		if (is_clean())
 		{
-			string dot = export_graph(g, v, horiz, labels, encodings).to_string();
+			string dot = export_graph(g, v, horiz, labels, notations, encodings).to_string();
 
 			if (oformat == "dot")
 			{
