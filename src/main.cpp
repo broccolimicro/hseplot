@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 		else
 		{
 			string filename = argv[i];
-			int dot = filename.find_last_of(".");
+			size_t dot = filename.find_last_of(".");
 			string format = "";
 			if (dot != string::npos)
 				format = filename.substr(dot+1);
@@ -168,9 +168,6 @@ int main(int argc, char **argv)
 		}
 		if (process) {
 			g.post_process(v, proper, aggressive);
-		}
-		if (notations) {
-			g.compute_parallel_nodes();
 		}
 
 		g.check_variables(v);
