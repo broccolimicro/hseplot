@@ -42,7 +42,8 @@ void print_help()
 	cout << " -lr,--leftright Render the graph from left to right" << endl;
 	cout << " -e,--effective  Show the effective encoding of each place" << endl;
 	cout << " -p,--predicate  Show the predicate of each place" << endl;
-	cout << " -s,--sync\t\tRender half synchronization actions" << endl;
+	cout << " -r,--raw        Do not post-process the graph" << endl;
+	cout << " -s,--sync       Render half synchronization actions" << endl;
 }
 
 void print_version()
